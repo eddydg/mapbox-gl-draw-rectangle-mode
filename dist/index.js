@@ -2,7 +2,10 @@
 
 var DrawPolygon = {};
 
-DrawPolygon.onSetup = function () {
+DrawPolygon.onSetup = function (opts) {
+  var map = opts.map;
+
+
   var polygon = this.newFeature({
     type: 'Feature',
     properties: {},
@@ -15,30 +18,57 @@ DrawPolygon.onSetup = function () {
   this.addFeature(polygon);
 
   var state = {
-    polygon: polygon
+    map: map,
+    polygon: polygon,
+    isDragging: false
   };
 
   return state;
 };
 
-DrawPolygon.clickAnywhere = function (state, e) {
-  state.polygon.updateCoordinate('0.0', e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate('0.1', e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate('0.2', e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate('0.3', e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate('0.4', e.lngLat.lng, e.lngLat.lat);
+DrawPolygon.setInitialRectangle = function (state, _ref) {
+  var _ref$lngLat = _ref.lngLat,
+      lng = _ref$lngLat.lng,
+      lat = _ref$lngLat.lat;
+
+  state.polygon.updateCoordinate('0.0', lng, lat);
+  state.polygon.updateCoordinate('0.1', lng, lat);
+  state.polygon.updateCoordinate('0.2', lng, lat);
+  state.polygon.updateCoordinate('0.3', lng, lat);
+  state.polygon.updateCoordinate('0.4', lng, lat);
 };
 
-DrawPolygon.onMouseMove = function (state, e) {
+DrawPolygon.onDrag = function (state, e) {
+  state.isDragging = true;
+
   var firstPoint = state.polygon.coordinates[0][0];
   if (!firstPoint) return;
-  state.polygon.updateCoordinate('0.1', e.lngLat.lng, firstPoint[1]);
-  state.polygon.updateCoordinate('0.2', e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate('0.3', firstPoint[0], e.lngLat.lat);
+
+  var _e$lngLat = e.lngLat,
+      lng = _e$lngLat.lng,
+      lat = _e$lngLat.lat;
+
+  state.polygon.updateCoordinate('0.1', lng, firstPoint[1]);
+  state.polygon.updateCoordinate('0.2', lng, lat);
+  state.polygon.updateCoordinate('0.3', firstPoint[0], lat);
+};
+
+DrawPolygon.onMouseDown = function (state, e) {
+  state.map.dragPan.disable();
+
+  return this.setInitialRectangle(state, e);
+};
+
+DrawPolygon.onMouseUp = function (state, e) {
+  state.map.dragPan.enable();
+  state.isDragging = false;
+
+  //return this.changeMode('simple_select');
 };
 
 DrawPolygon.onClick = function (state, e) {
-  return this.clickAnywhere(state, e);
+  state.isDragging = false;
+  state.polygon.setCoordinates([[]]);
 };
 
 DrawPolygon.toDisplayFeatures = function (state, geojson, display) {

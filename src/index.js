@@ -1,6 +1,8 @@
 const DrawPolygon = {};
 
-DrawPolygon.onSetup = function() {
+DrawPolygon.onSetup = function(opts) {
+  const { map } = opts;
+
   const polygon = this.newFeature({
     type: 'Feature',
     properties: {},
@@ -13,31 +15,46 @@ DrawPolygon.onSetup = function() {
   this.addFeature(polygon);
 
   const state = {
-    polygon
+    map,
+    polygon,
+    isDragging: false
   };
 
   return state;
 };
 
-DrawPolygon.clickAnywhere = function(state, e) {
-  state.polygon.updateCoordinate(`0.0`, e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate(`0.1`, e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate(`0.2`, e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate(`0.3`, e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate(`0.4`, e.lngLat.lng, e.lngLat.lat);
+DrawPolygon.setInitialRectangle = function(state, { lngLat: { lng, lat }}) {
+  state.polygon.updateCoordinate(`0.0`, lng, lat);
+  state.polygon.updateCoordinate(`0.1`, lng, lat);
+  state.polygon.updateCoordinate(`0.2`, lng, lat);
+  state.polygon.updateCoordinate(`0.3`, lng, lat);
+  state.polygon.updateCoordinate(`0.4`, lng, lat);
 };
 
-DrawPolygon.onMouseMove = function(state, e) {
+DrawPolygon.onDrag = function(state, e) {
+  state.isDragging = true;
+  
   const firstPoint = state.polygon.coordinates[0][0];
   if (!firstPoint) return;
-  state.polygon.updateCoordinate(`0.1`, e.lngLat.lng, firstPoint[1]);
-  state.polygon.updateCoordinate(`0.2`, e.lngLat.lng, e.lngLat.lat);
-  state.polygon.updateCoordinate(`0.3`, firstPoint[0], e.lngLat.lat);
-};
 
-DrawPolygon.onClick = function(state, e) {
-  return this.clickAnywhere(state, e);
-};
+  const { lng, lat } = e.lngLat;
+  state.polygon.updateCoordinate(`0.1`, lng, firstPoint[1]);
+  state.polygon.updateCoordinate(`0.2`, lng, lat);
+  state.polygon.updateCoordinate(`0.3`, firstPoint[0], lat);
+}
+
+DrawPolygon.onMouseDown = function(state, e) {
+   state.map.dragPan.disable();
+
+  return this.setInitialRectangle(state, e);
+}
+
+DrawPolygon.onMouseUp = function(state, e) {
+  state.isDragging = false;
+  state.map.dragPan.enable();
+  
+  return this.changeMode('simple_select');
+}
 
 DrawPolygon.toDisplayFeatures = function(state, geojson, display) {
   return display(geojson);

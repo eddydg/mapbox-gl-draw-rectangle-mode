@@ -41,7 +41,7 @@ var draw = new MapboxDraw({
 
 map.addControl(draw);
 
-draw.changeMode('rectangle');
+draw.changeMode('rectangle', { map: map });
 
 map.on('draw.create', updateArea);
 map.on('draw.delete', updateArea);
