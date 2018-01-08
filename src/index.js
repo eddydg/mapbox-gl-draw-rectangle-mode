@@ -56,6 +56,16 @@ DrawPolygon.onMouseUp = function(state, e) {
   return this.changeMode('simple_select');
 }
 
+DrawRectangle.onStop = function(state) {
+  if (state.polygon.isValid()) {
+    state.map.fire('draw.create', {
+      features: [state.polygon.toGeoJSON()]
+    });
+  } else {
+    this.changeMode('simple_select', {}, { silent: true });
+  }
+};
+
 DrawPolygon.toDisplayFeatures = function(state, geojson, display) {
   return display(geojson);
 };
